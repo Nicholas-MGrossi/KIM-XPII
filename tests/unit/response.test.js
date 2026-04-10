@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { generateResponse } = require('../../app.js');
+const { generateResponse } = require('../../core.js');
 
 describe('Response Generation', () => {
   describe('generateResponse()', () => {

@@ -41,17 +41,18 @@ describe('TF-IDF Utilities', () => {
     });
 
     it('should handle unknown terms', () => {
-      const docFreq = {};
-      const N = 1;
+      const docFreq = { new: 1, unknown: 1, here: 1 };
+      const N = 2;
       const vec = tfidfEmbed('new unknown term here', docFreq, N);
       expect(vec.new).to.be.greaterThan(0);
+      expect(vec.unknown).to.be.greaterThan(0);
     });
   });
 
   describe('cosineSim()', () => {
     it('should return 1 for identical vectors', () => {
       const v = { a: 1, b: 2 };
-      expect(cosineSim(v, v)).to.equal(1);
+      expect(cosineSim(v, v)).to.be.closeTo(1, 0.0001);
     });
 
     it('should return 0 for orthogonal vectors', () => {

@@ -1,10 +1,5 @@
 const { expect } = require('chai');
-require('../../app.js');
-
-const mockSources = [
-  { id: '1', title: 'Test Paper One', abstract: 'Abstract text here', source: 'arXiv', url: '#', authors: ['A'], published: '2024-01-01', citations: 10 },
-  { id: '2', title: 'Test Paper Two', abstract: 'Different abstract', source: 'arXiv', url: '#', authors: ['B'], published: '2024-01-02', citations: 20 }
-];
+const { mockSources, initVectors, findTopK, calculateConfidence, getDocFreq, getSourceVectors } = require('../../core.js');
 
 describe('Core Application Logic', () => {
   beforeEach(() => {
@@ -13,13 +8,13 @@ describe('Core Application Logic', () => {
 
   describe('initVectors()', () => {
     it('should initialize document frequency', () => {
-      expect(docFreq).to.be.an('object');
-      expect(Object.keys(docFreq).length).to.be.greaterThan(0);
+      expect(getDocFreq()).to.be.an('object');
+      expect(Object.keys(getDocFreq()).length).to.be.greaterThan(0);
     });
 
     it('should initialize source vectors', () => {
-      expect(sourceVectors).to.be.an('array');
-      expect(sourceVectors.length).to.equal(mockSources.length);
+      expect(getSourceVectors()).to.be.an('array');
+      expect(getSourceVectors().length).to.equal(mockSources.length);
     });
   });
 

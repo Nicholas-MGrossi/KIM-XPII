@@ -138,12 +138,12 @@ let sourceVectors = null;
 
 function initVectors() {
     const docs = mockSources.map(s => `${s.title} ${s.abstract}`);
-    docFreq = buildDocFreq(docs);
+    _docFreq = buildDocFreq(docs);
     const N = docs.length;
     
-    sourceVectors = mockSources.map(s => ({
+    _sourceVectors = mockSources.map(s => ({
         ...s,
-        vector: tfidfEmbed(`${s.title} ${s.abstract}`, docFreq, N)
+        vector: tfidfEmbed(`${s.title} ${s.abstract}`, _docFreq, N)
     }));
 }
 
@@ -162,9 +162,9 @@ async function fetchResearch() {
 }
 
 function findTopK(query, k = 3) {
-    const queryVec = tfidfEmbed(query, docFreq, mockSources.length);
+    const queryVec = tfidfEmbed(query, _docFreq, mockSources.length);
     
-    const scored = sourceVectors.map(s => ({
+    const scored = _sourceVectors.map(s => ({
         ...s,
         similarity: cosineSim(queryVec, s.vector)
     }));
@@ -181,6 +181,9 @@ function calculateConfidence(topSources) {
     return { level: 'low', score: avgSim, label: 'LOW' };
 }
 
+let _docFreq = null;
+let _sourceVectors = null;
+
 module.exports = {
     mockSources,
     tokenize,
@@ -191,5 +194,7 @@ module.exports = {
     initVectors,
     fetchResearch,
     findTopK,
-    calculateConfidence
+    calculateConfidence,
+    getDocFreq: () => _docFreq,
+    getSourceVectors: () => _sourceVectors
 };
