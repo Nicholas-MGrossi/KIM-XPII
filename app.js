@@ -1,10 +1,10 @@
 /**
- * Research Vector Synthesis App
+ * KIM - Research Chat Assistant
  * TF-IDF embeddings + Cosine similarity + Meta-prompting
  */
 
 // ============================================
-// EMBEDDED MOCK DATA (CORS-free)
+// EMBEDDED MOCK DATA
 // ============================================
 const mockSources = [
     {
@@ -73,9 +73,6 @@ const mockSources = [
 // TF-IDF & VECTOR UTILITIES
 // ============================================
 
-/**
- * Tokenize text into words (fixed regex)
- */
 function tokenize(text) {
     return text.toLowerCase()
         .replace(/[^\w\s]/g, ' ')
@@ -83,9 +80,6 @@ function tokenize(text) {
         .filter(w => w.length > 2);
 }
 
-/**
- * Build document frequency map
- */
 function buildDocFreq(docs) {
     const df = {};
     docs.forEach(doc => {
@@ -97,9 +91,6 @@ function buildDocFreq(docs) {
     return df;
 }
 
-/**
- * Compute TF-IDF vector for a document
- */
 function tfidfEmbed(text, docFreq, N) {
     const tokens = tokenize(text);
     const tf = {};
@@ -115,9 +106,6 @@ function tfidfEmbed(text, docFreq, N) {
     return vec;
 }
 
-/**
- * Compute cosine similarity between two vectors
- */
 function cosineSim(v1, v2) {
     let dot = 0, norm1 = 0, norm2 = 0;
     const allKeys = new Set([...Object.keys(v1), ...Object.keys(v2)]);
@@ -135,51 +123,24 @@ function cosineSim(v1, v2) {
 }
 
 // ============================================
-// META-PROMPT TEMPLATE
+// AI RESPONSE GENERATION
 // ============================================
 
-function metaPromptTemplate(goal, topSources) {
-    const sourcesText = topSources.map((s, i) => 
-        `[${i + 1}] ${s.title} (${s.source})\n${s.abstract}`
-    ).join('\n\n');
-
-    return `You are a research synthesis engine. Given a user's research goal and relevant sources, produce a "steelpoint" synthesis: concise, actionable, evidence-backed insights.
-
-USER GOAL: ${goal}
-
-RELEVANT SOURCES:
-${sourcesText}
-
-INSTRUCTIONS:
-1. Synthesize key findings across sources
-2. Identify consensus and contradictions
-3. Provide actionable recommendations
-4. Cite sources using [1], [2], etc.
-5. Output 3-5 bullet points maximum
-
-STEELPOINT SYNTHESIS:`;
-}
-
-// ============================================
-// SIMULATED AI SYNTHESIS
-// ============================================
-
-function generateSynthesis(goal, sources) {
-    const keywords = tokenize(goal);
-    const keyTerms = keywords.slice(0, 3).join(', ');
+function generateResponse(query, sources) {
+    const keywords = tokenize(query);
+    const keyTerms = keywords.slice(0, 3).join(', ') || query;
     
     const templates = [
-        `Based on current research, **${keyTerms}** shows strong promise with demonstrated improvements of 20-40% over baseline approaches [1][2]. Key implementations include production-grade frameworks with 3K+ GitHub stars and edge-deployment capabilities [3][4].`,
+        `Based on current research, **${keyTerms}** shows strong promise with demonstrated improvements of 20-40% over baseline approaches. Key implementations include production-grade frameworks with 3K+ GitHub stars and edge-deployment capabilities.`,
         
-        `The convergence of **${keyTerms}** enables billion-scale vector search with <50ms latency and 99%+ recall [2][5]. Hybrid approaches combining classical TF-IDF with dense embeddings outperform pure neural methods on out-of-domain queries [4].`,
+        `The convergence of **${keyTerms}** enables billion-scale vector search with <50ms latency and 99%+ recall. Hybrid approaches combining classical TF-IDF with dense embeddings outperform pure neural methods on out-of-domain queries.`,
         
-        `For **${keyTerms}**, researchers recommend: (1) HNSW++ indexing for large-scale deployment [2], (2) GPU acceleration achieving 10M queries/second [5], (3) Meta-prompt scaffolding for 23% reasoning improvements [1].`,
+        `For **${keyTerms}**, researchers recommend: (1) HNSW++ indexing for large-scale deployment, (2) GPU acceleration achieving 10M queries/second, (3) Meta-prompt scaffolding for 23% reasoning improvements.`,
         
-        `**${keyTerms}** research indicates three critical factors: indexing efficiency (40% latency reduction) [2], quantization techniques (8x memory savings) [5], and hybrid retrieval strategies [4]. Production systems should prioritize these optimizations.`
+        `Research on **${keyTerms}** indicates three critical factors: indexing efficiency (40% latency reduction), quantization techniques (8x memory savings), and hybrid retrieval strategies. Production systems should prioritize these optimizations.`
     ];
     
-    // Select template based on goal hash for consistency
-    const hash = goal.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const hash = query.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     return templates[hash % templates.length];
 }
 
@@ -190,9 +151,6 @@ function generateSynthesis(goal, sources) {
 let docFreq = null;
 let sourceVectors = null;
 
-/**
- * Initialize vector embeddings for all sources
- */
 function initVectors() {
     const docs = mockSources.map(s => `${s.title} ${s.abstract}`);
     docFreq = buildDocFreq(docs);
@@ -204,9 +162,6 @@ function initVectors() {
     }));
 }
 
-/**
- * Shuffle array (Fisher-Yates)
- */
 function shuffle(array) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -216,35 +171,23 @@ function shuffle(array) {
     return arr;
 }
 
-/**
- * Simulate fetching research (with shuffle for "live" feel)
- */
 async function fetchResearch() {
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 800));
-    
-    // Return shuffled mock data for variety
+    await new Promise(r => setTimeout(r, 600));
     return shuffle(mockSources);
 }
 
-/**
- * Find top-k similar sources using cosine similarity
- */
-function findTopK(goal, k = 3) {
-    const goalVec = tfidfEmbed(goal, docFreq, mockSources.length);
+function findTopK(query, k = 3) {
+    const queryVec = tfidfEmbed(query, docFreq, mockSources.length);
     
     const scored = sourceVectors.map(s => ({
         ...s,
-        similarity: cosineSim(goalVec, s.vector)
+        similarity: cosineSim(queryVec, s.vector)
     }));
     
     scored.sort((a, b) => b.similarity - a.similarity);
     return scored.slice(0, k);
 }
 
-/**
- * Calculate confidence level based on similarity scores
- */
 function calculateConfidence(topSources) {
     const avgSim = topSources.reduce((sum, s) => sum + s.similarity, 0) / topSources.length;
     
@@ -254,69 +197,8 @@ function calculateConfidence(topSources) {
 }
 
 // ============================================
-// UI UPDATES
+// CHAT UI FUNCTIONS
 // ============================================
-
-function showLoading(show) {
-    document.getElementById('loading').hidden = !show;
-    document.getElementById('synthesize-btn').disabled = show;
-}
-
-function showError(message) {
-    const errorSection = document.getElementById('error');
-    document.getElementById('error-message').textContent = message;
-    errorSection.hidden = false;
-    document.getElementById('results').hidden = true;
-}
-
-function hideError() {
-    document.getElementById('error').hidden = true;
-}
-
-function updateConfidenceBadge(confidence) {
-    const badge = document.getElementById('confidence-display');
-    const value = document.getElementById('confidence-value');
-    
-    badge.className = `confidence-badge confidence-${confidence.level}`;
-    value.textContent = `${confidence.label} (${(confidence.score * 100).toFixed(1)}%)`;
-}
-
-function renderSynthesis(synthesis) {
-    const content = document.getElementById('synthesis-content');
-    content.innerHTML = synthesis
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
-}
-
-function renderMatches(matches) {
-    const container = document.getElementById('matches-list');
-    container.innerHTML = matches.map(m => `
-        <div class="match-card">
-            <div class="match-header">
-                <span class="match-title">${escapeHtml(m.title)}</span>
-                <span class="similarity-score">${(m.similarity * 100).toFixed(1)}%</span>
-            </div>
-            <div class="match-source">${m.source} • ${m.published}</div>
-            <div class="match-abstract">${escapeHtml(m.abstract.substring(0, 150))}...</div>
-        </div>
-    `).join('');
-}
-
-function renderCitations(matches) {
-    const list = document.getElementById('citations-list');
-    list.innerHTML = matches.map((m, i) => {
-        const author = m.authors ? m.authors[0] : m.authors;
-        const metric = m.citations ? `${m.citations} citations` : `${m.stars} stars`;
-        return `
-            <li>
-                <strong>[${i + 1}]</strong> 
-                <a href="${m.url}" target="_blank" rel="noopener">${escapeHtml(m.title)}</a>
-                <br>
-                <small>${author} et al. • ${m.source} • ${metric}</small>
-            </li>
-        `;
-    }).join('');
-}
 
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -324,52 +206,95 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ============================================
-// MAIN PROCESS
-// ============================================
+function addUserMessage(text) {
+    const container = document.getElementById('messages-container');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user';
+    messageDiv.innerHTML = `
+        <div class="user-avatar">U</div>
+        <div class="message-content">${escapeHtml(text)}</div>
+    `;
+    container.appendChild(messageDiv);
+    scrollToBottom();
+}
 
-async function processGoal() {
-    const goalInput = document.getElementById('goal-input');
-    const goal = goalInput.value.trim();
+function addAIMessage(content, sources = []) {
+    const container = document.getElementById('messages-container');
     
-    if (!goal) {
-        showError('Please enter a research goal');
-        return;
+    let html = `<div class="message">
+        <div class="ai-avatar">K</div>
+        <div class="message-content">
+            <p>${content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '</p><p>')}</p>`;
+    
+    if (sources.length > 0) {
+        html += `<div class="vector-matches">
+            <h4>Sources (click to read more)</h4>`;
+        sources.forEach((s, i) => {
+            html += `<div class="match-item">
+                <span class="match-score">${(s.similarity * 100).toFixed(0)}%</span>
+                <strong>${escapeHtml(s.title)}</strong><br>
+                <small>${s.source} - ${escapeHtml(s.abstract.substring(0, 80))}...</small>
+            </div>`;
+        });
+        html += `</div>`;
     }
     
-    hideError();
-    showLoading(true);
-    document.getElementById('results').hidden = true;
+    html += `</div></div>`;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.innerHTML = html;
+    container.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function addLoadingMessage() {
+    const container = document.getElementById('messages-container');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading-message';
+    loadingDiv.id = 'loading-message';
+    loadingDiv.innerHTML = `
+        <div class="ai-avatar">K</div>
+        <div class="loading-dots">
+            <span></span><span></span><span></span>
+        </div>
+    `;
+    container.appendChild(loadingDiv);
+    scrollToBottom();
+}
+
+function removeLoadingMessage() {
+    const loading = document.getElementById('loading-message');
+    if (loading) loading.remove();
+}
+
+function scrollToBottom() {
+    const chatMain = document.getElementById('chat-main');
+    chatMain.scrollTop = chatMain.scrollHeight;
+}
+
+// ============================================
+// MAIN CHAT PROCESS
+// ============================================
+
+async function processChatMessage(query) {
+    if (!query.trim()) return;
+    
+    addUserMessage(query);
+    addLoadingMessage();
     
     try {
-        // Fetch research (simulated with shuffled mock data)
         const sources = await fetchResearch();
-        
-        // Re-initialize vectors with current corpus
         initVectors();
+        const topMatches = findTopK(query, 3);
+        const response = generateResponse(query, topMatches);
         
-        // Find top-k matches using cosine similarity
-        const topMatches = findTopK(goal, 3);
-        
-        // Calculate confidence
-        const confidence = calculateConfidence(topMatches);
-        
-        // Generate synthesis
-        const synthesis = generateSynthesis(goal, topMatches);
-        
-        // Update UI
-        updateConfidenceBadge(confidence);
-        renderSynthesis(synthesis);
-        renderMatches(topMatches);
-        renderCitations(topMatches);
-        
-        document.getElementById('results').hidden = false;
+        removeLoadingMessage();
+        addAIMessage(response, topMatches);
         
     } catch (error) {
         console.error('Processing error:', error);
-        showError('Failed to process research goal. Please try again.');
-    } finally {
-        showLoading(false);
+        removeLoadingMessage();
+        addAIMessage('Sorry, I encountered an error processing your request. Please try again.');
     }
 }
 
@@ -378,17 +303,31 @@ async function processGoal() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize vectors on load
     initVectors();
     
-    // Button click handler
-    document.getElementById('synthesize-btn').addEventListener('click', processGoal);
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
     
-    // Enter key handler (fixed)
-    document.getElementById('goal-input').addEventListener('keydown', (e) => {
+    function handleSend() {
+        const message = chatInput.value.trim();
+        if (message) {
+            processChatMessage(message);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+        }
+    }
+    
+    sendBtn.addEventListener('click', handleSend);
+    
+    chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            processGoal();
+            handleSend();
         }
+    });
+    
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 150) + 'px';
     });
 });
