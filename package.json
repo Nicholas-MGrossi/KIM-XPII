@@ -6,13 +6,16 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win --x64",
-    "pack": "electron-builder --dir"
+    "pack": "electron-builder --dir",
+    "test": "mocha tests/**/*.test.js"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "chai": "^6.2.2",
     "electron": "^33.3.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "mocha": "^11.7.5"
   },
   "build": {
     "appId": "com.research.vector-synthesis",
@@ -30,7 +33,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "icon.ico"
