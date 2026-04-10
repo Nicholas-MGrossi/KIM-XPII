@@ -3,3 +3,4 @@ dist/
 *.exe
 *.asar
 .DS_Store
+.kilo/
